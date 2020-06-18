@@ -10,7 +10,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "GLViewMediaActivity";
     private GLSurfaceView glSurfaceView;
     private GLVideoRenderer glVideoRenderer;
-    public static final String videoPath = "/sdcard/DCIM/Camera/VID_20200617_193041.mp4";
+    private SoulOutRenderer soulOutRenderer;
+    public static final String videoPath = "/sdcard/DCIM/Camera/VID_20200618_174150.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,8 +21,8 @@ public class MainActivity extends AppCompatActivity {
         glSurfaceView = findViewById(R.id.surface_view);
 
         glSurfaceView.setEGLContextClientVersion(2);
-        glVideoRenderer = new GLVideoRenderer(this, videoPath);//创建renderer
-        glSurfaceView.setRenderer(glVideoRenderer);//设置renderer
+        soulOutRenderer = new SoulOutRenderer(this, videoPath);//创建renderer
+        glSurfaceView.setRenderer(soulOutRenderer);//设置renderer
 
     }
 }
