@@ -52,21 +52,21 @@ public class ShaderUtils {
             return 0;
         }
 
-        int program = GLES20.glCreateProgram();
-        if (program != 0) {
-            GLES20.glAttachShader(program, vertexShader);
+        int programID = GLES20.glCreateProgram();
+        if (programID != 0) {
+            GLES20.glAttachShader(programID, vertexShader);
             checkGlError("glAttachShader");
-            GLES20.glAttachShader(program, pixelShader);
+            GLES20.glAttachShader(programID, pixelShader);
             checkGlError("glAttachShader");
-            GLES20.glLinkProgram(program);
+            GLES20.glLinkProgram(programID);
             int[] linkStatus = new int[1];
-            GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
+            GLES20.glGetProgramiv(programID, GLES20.GL_LINK_STATUS, linkStatus, 0);
             if (linkStatus[0] != GLES20.GL_TRUE) {
-                GLES20.glDeleteProgram(program);
-                program = 0;
+                GLES20.glDeleteProgram(programID);
+                programID = 0;
             }
         }
-        return program;
+        return programID;
     }
 
     public static void checkGlError(String label) {

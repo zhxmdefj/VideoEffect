@@ -23,13 +23,11 @@ import javax.microedition.khronos.opengles.GL10;
 public class GLVideoRenderer implements GLSurfaceView.Renderer
         , SurfaceTexture.OnFrameAvailableListener, MediaPlayer.OnVideoSizeChangedListener  {
 
-    private static final String TAG = "GLRenderer";
+    private static final String TAG = "GLVideoRenderer";
     private Context context;
-    private int aPositionLocation;
-    private int programId;
-    private FloatBuffer vertexBuffer;
 
     //顶点坐标
+    private FloatBuffer vertexBuffer;
     private final float[] vertexData = {
             1f,-1f,0f,
             -1f,-1f,0f,
@@ -37,28 +35,35 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
             -1f,1f,0f
     };
 
-    private final float[] projectionMatrix=new float[16];
-    private int uMatrixLocation;
-
     //纹理坐标
+    private FloatBuffer textureVertexBuffer;
     private final float[] textureVertexData = {
             1f,0f,
             0f,0f,
             1f,1f,
             0f,1f
     };
-    private FloatBuffer textureVertexBuffer;
-    private int uTextureSamplerLocation;
+
+    //Matrix
+    private float[] mMvpMatrix =new float[16];
+    private float[] mTexMatrix = new float[16];
+
+    //shader uniform location
+    private int aPositionLocation;
     private int aTextureCoordLocation;
+    private int uMvpMatrixLocation;
+    private int uTexMatrixLocation;
+    private int uTextureLocation;//fragment
+
+    private int programID;
     private int textureId;
 
     private SurfaceTexture surfaceTexture;
     private MediaPlayer mediaPlayer;
-    private float[] mSTMatrix = new float[16];
-    private int uSTMMatrixHandle;
 
     private boolean updateSurface;
     private boolean playerPrepared;
+
     private int screenWidth,screenHeight;
 
     public GLVideoRenderer(Context context,String videoPath) {
@@ -80,7 +85,7 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
         textureVertexBuffer.position(0);
 
         //初始化MediaPlayer
-        mediaPlayer=new MediaPlayer();
+        mediaPlayer = new MediaPlayer();
         try {
             mediaPlayer.setDataSource(context, Uri.parse(videoPath));
         } catch (IOException e){
@@ -93,35 +98,35 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        //set shader
         String vertexShader = ShaderUtils.readRawTextFile(context, R.raw.simple_vertex_shader);
         String fragmentShader= ShaderUtils.readRawTextFile(context, R.raw.gray_fragment_shader);
-        programId=ShaderUtils.createProgram(vertexShader,fragmentShader);
-        aPositionLocation= GLES20.glGetAttribLocation(programId,"aPosition");
-        uMatrixLocation=GLES20.glGetUniformLocation(programId,"uMatrix");
-        uSTMMatrixHandle = GLES20.glGetUniformLocation(programId, "uSTMatrix");
-        uTextureSamplerLocation=GLES20.glGetUniformLocation(programId,"sTexture");
-        aTextureCoordLocation=GLES20.glGetAttribLocation(programId,"aTexCoord");
+        programID = ShaderUtils.createProgram(vertexShader,fragmentShader);
+        aPositionLocation = GLES20.glGetAttribLocation(programID,"aPosition");
+        aTextureCoordLocation = GLES20.glGetAttribLocation(programID,"aTexCoord");
+        uMvpMatrixLocation = GLES20.glGetUniformLocation(programID,"uMvpMatrix");
+        uTexMatrixLocation = GLES20.glGetUniformLocation(programID, "uTexMatrix");
+        uTextureLocation = GLES20.glGetUniformLocation(programID,"uTexture");
 
+        //set texture
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
-
         textureId = textures[0];
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
         ShaderUtils.checkGlError("glBindTexture mTextureID");
-
         GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER,
                 GLES20.GL_NEAREST);
         GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER,
                 GLES20.GL_LINEAR);
 
-        //SurfaceTexture作为MediaPlayer的输出
+        //set SurfaceTexture 作为MediaPlayer的输出
         surfaceTexture = new SurfaceTexture(textureId);
         surfaceTexture.setOnFrameAvailableListener(this);//监听是否有新的一帧数据到来
-
         Surface surface = new Surface(surfaceTexture);
         mediaPlayer.setSurface(surface);
         surface.release();
 
+        //set MediaPlayer
         if (!playerPrepared){
             try {
                 mediaPlayer.prepare();
@@ -146,13 +151,13 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
         synchronized (this){
             if (updateSurface){
                 surfaceTexture.updateTexImage();//获取新数据
-                surfaceTexture.getTransformMatrix(mSTMatrix);//让新的纹理和纹理坐标系能够正确的对应,mSTMatrix的定义是和projectionMatrix完全一样的。
+                surfaceTexture.getTransformMatrix(mTexMatrix);//让新的纹理和纹理坐标系能够正确的对应,mSTMatrix的定义是和projectionMatrix完全一样的。
                 updateSurface = false;
             }
         }
-        GLES20.glUseProgram(programId);
-        GLES20.glUniformMatrix4fv(uMatrixLocation,1,false,projectionMatrix,0);
-        GLES20.glUniformMatrix4fv(uSTMMatrixHandle, 1, false, mSTMatrix, 0);
+        GLES20.glUseProgram(programID);
+        GLES20.glUniformMatrix4fv(uMvpMatrixLocation, 1, false, mMvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(uTexMatrixLocation, 1, false, mTexMatrix, 0);
 
         vertexBuffer.position(0);
         GLES20.glEnableVertexAttribArray(aPositionLocation);
@@ -166,7 +171,7 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,textureId);
 
-        GLES20.glUniform1i(uTextureSamplerLocation,0);
+        GLES20.glUniform1i(uTextureLocation,0);
         GLES20.glViewport(0,0,screenWidth,screenHeight);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -186,8 +191,8 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
         float screenRatio=(float)screenWidth/screenHeight;
         float videoRatio=(float)videoWidth/videoHeight;
         if (videoRatio>screenRatio){
-            Matrix.orthoM(projectionMatrix,0,-1f,1f,-videoRatio/screenRatio,videoRatio/screenRatio,-1f,1f);
-        }else Matrix.orthoM(projectionMatrix,0,-screenRatio/videoRatio,screenRatio/videoRatio,-1f,1f,-1f,1f);
+            Matrix.orthoM(mMvpMatrix,0,-1f,1f,-videoRatio/screenRatio,videoRatio/screenRatio,-1f,1f);
+        }else Matrix.orthoM(mMvpMatrix,0,-screenRatio/videoRatio,screenRatio/videoRatio,-1f,1f,-1f,1f);
     }
 
     public MediaPlayer getMediaPlayer() {
