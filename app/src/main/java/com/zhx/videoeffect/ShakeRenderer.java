@@ -20,7 +20,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class SoulOutRenderer implements GLSurfaceView.Renderer
+public class ShakeRenderer implements GLSurfaceView.Renderer
         , SurfaceTexture.OnFrameAvailableListener, MediaPlayer.OnVideoSizeChangedListener  {
 
     private static final String TAG = "SoulOutRenderer";
@@ -60,6 +60,7 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
     private int uTexMatrixLocation;
     private int uTextureLocation;//fragment
     private int uAlphaLocation;//fragment new for soulout
+    private int uTextureCoordOffsetLocation;//fragment new for shake
 
     private int programID;
     private int textureId;
@@ -72,7 +73,7 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
 
     private int screenWidth,screenHeight;
 
-    public SoulOutRenderer(Context context,String videoPath) {
+    public ShakeRenderer(Context context,String videoPath) {
         this.context = context;
         playerPrepared=false;
         synchronized(this) {
@@ -105,8 +106,8 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         //set shader
-        String vertexShader = ShaderUtils.readRawTextFile(context, R.raw.soulout_vertex_shader);
-        String fragmentShader= ShaderUtils.readRawTextFile(context, R.raw.soulout_fragment_shader);
+        String vertexShader = ShaderUtils.readRawTextFile(context, R.raw.shake_vertex_shader);
+        String fragmentShader= ShaderUtils.readRawTextFile(context, R.raw.shake_fragment_shader);
         programID = ShaderUtils.createProgram(vertexShader,fragmentShader);
         aPositionLocation = GLES20.glGetAttribLocation(programID,"aPosition");
         aTextureCoordLocation = GLES20.glGetAttribLocation(programID,"aTexCoord");
@@ -114,6 +115,7 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
         uTexMatrixLocation = GLES20.glGetUniformLocation(programID, "uTexMatrix");
         uTextureLocation = GLES20.glGetUniformLocation(programID,"uTexture");
         uAlphaLocation = GLES20.glGetUniformLocation(programID,"uAlpha");
+        uTextureCoordOffsetLocation = GLES20.glGetUniformLocation(programID,"uTextureCoordOffset");
 
         //set texture
         int[] textures = new int[1];
@@ -167,18 +169,26 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
         }
 
         GLES20.glUseProgram(programID);
-        Matrix.setIdentityM(mMvpMatrix, 0);//初始化矩阵
+
+        float scale = 1.0f + 0.2f * mProgress;
+        Matrix.setIdentityM(mMvpMatrix, 0);
+        //设置放大的百分比
+        Matrix.scaleM(mMvpMatrix, 0, scale, scale, 1.0f);
         GLES20.glUniformMatrix4fv(uMvpMatrixLocation, 1, false, mMvpMatrix, 0);
 
-        //底层图层的透明度
-        float backAlpha = 1f;
-        //放大图层的透明度
-        float alpha = 0f;
-        if (mProgress > 0f) {
-            alpha = 0.2f - mProgress * 0.2f;
-            backAlpha = 1 - alpha;
-        }
-        GLES20.glUniform1f(uAlphaLocation, backAlpha);
+        //设置色值偏移的量
+        float textureCoordOffset = 0.01f * mProgress;
+        GLES20.glUniform1f(uTextureCoordOffsetLocation, textureCoordOffset);
+
+//        //底层图层的透明度
+//        float backAlpha = 1f;
+//        //放大图层的透明度
+//        float alpha = 0f;
+//        if (mProgress > 0f) {
+//            alpha = 0.2f - mProgress * 0.2f;
+//            backAlpha = 1 - alpha;
+//        }
+//        GLES20.glUniform1f(uAlphaLocation, backAlpha);
         GLES20.glUniformMatrix4fv(uTexMatrixLocation, 1, false, mTexMatrix, 0);
         synchronized (this){
             if (updateSurface){
@@ -203,16 +213,18 @@ public class SoulOutRenderer implements GLSurfaceView.Renderer
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,textureId);
 
-//        //绘制底部原图
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        if (mProgress > 0f) {
-            //这里绘制放大图层
-            GLES20.glUniform1f(uAlphaLocation, alpha);
-            float scale = 1.0f + 1f * mProgress;
-            Matrix.scaleM(mMvpMatrix, 0, scale, scale, scale);
-            GLES20.glUniformMatrix4fv(uMvpMatrixLocation, 1, false, mMvpMatrix, 0);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        }
+
+//        //绘制底部原图
+//        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+//        if (mProgress > 0f) {
+//            //这里绘制放大图层
+//            GLES20.glUniform1f(uAlphaLocation, alpha);
+//            float scale = 1.0f + 1f * mProgress;
+//            Matrix.scaleM(mMvpMatrix, 0, scale, scale, scale);
+//            GLES20.glUniformMatrix4fv(uMvpMatrixLocation, 1, false, mMvpMatrix, 0);
+//            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+//        }
 
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         GLES20.glUseProgram(0);
