@@ -50,8 +50,8 @@ public class ShakeRenderer implements GLSurfaceView.Renderer
 
     private float mProgress = 0.0f;             //当前动画进度
     private int mFrames = 0;                    //当前地帧数
-    private static final int mMaxFrames = 15;   //动画最大帧数
-    private static final int mSkipFrames = 8;   //动画完成后跳过的帧数
+    private static final int mMaxFrames = 30;   //动画最大帧数
+    private static final int mSkipFrames = 10;   //动画完成后跳过的帧数
 
     //shader uniform location
     private int aPositionLocation;

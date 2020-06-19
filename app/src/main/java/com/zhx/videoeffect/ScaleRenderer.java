@@ -52,8 +52,8 @@ public class ScaleRenderer implements GLSurfaceView.Renderer
     //最大缩放是1.3倍
     private static final float mScale = 0.3f;
     private int mFrames;
-    //最大帧数是14帧，通过这个控制动画速度
-    private int mMaxFrames = 14;
+    //最大帧数是60帧，通过这个控制动画速度
+    private int mMaxFrames = 60;
     private int mMiddleFrames = mMaxFrames / 2;
 
     //shader uniform location
