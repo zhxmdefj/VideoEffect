@@ -12,6 +12,7 @@ public class MainActivity extends AppCompatActivity {
     private GLVideoRenderer glVideoRenderer;
     private SoulOutRenderer soulOutRenderer;
     private ShakeRenderer shakeRenderer;
+    private ScaleRenderer scaleRenderer;
     public static final String videoPath = "/sdcard/DCIM/Camera/VID_20200618_174150.mp4";
 
     @Override
@@ -22,8 +23,7 @@ public class MainActivity extends AppCompatActivity {
         glSurfaceView = findViewById(R.id.surface_view);
 
         glSurfaceView.setEGLContextClientVersion(2);
-        shakeRenderer = new ShakeRenderer(this, videoPath);//创建renderer
-        glSurfaceView.setRenderer(shakeRenderer);//设置renderer
-
+        scaleRenderer = new ScaleRenderer(this, videoPath);//创建renderer
+        glSurfaceView.setRenderer(scaleRenderer);//设置renderer
     }
 }

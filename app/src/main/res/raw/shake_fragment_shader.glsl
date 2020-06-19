@@ -4,7 +4,7 @@ varying vec2 vTexCoord;
 uniform samplerExternalOES uTexture;
 //颜色的偏移距离
 uniform float uTextureCoordOffset;
-void main(){
+void main() {
     vec4 blue = texture2D(uTexture,vTexCoord);
     vec4 green = texture2D(uTexture,vec2(vTexCoord.x + uTextureCoordOffset,vTexCoord.y + uTextureCoordOffset));
     vec4 red = texture2D(uTexture,vec2(vTexCoord.x - uTextureCoordOffset,vTexCoord.y - uTextureCoordOffset));
