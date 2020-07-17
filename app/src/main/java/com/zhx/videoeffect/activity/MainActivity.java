@@ -29,9 +29,13 @@ public class MainActivity extends AppCompatActivity {
         glSurfaceView = findViewById(R.id.surface_view);
 
         glSurfaceView.setEGLContextClientVersion(2);
-        setSoulOutRenderer(videoPath);
+        setGLVideoRenderer(videoPath);
 //        setShakeRenderer(videoPath);
 //        setScaleRenderer(videoPath);
+    }
+    public void setGLVideoRenderer(String videoPath){
+        glVideoRenderer = new GLVideoRenderer(this, videoPath);//创建renderer
+        glSurfaceView.setRenderer(glVideoRenderer);//设置renderer
     }
     public void setSoulOutRenderer(String videoPath){
         soulOutRenderer = new SoulOutRenderer(this, videoPath);//创建renderer

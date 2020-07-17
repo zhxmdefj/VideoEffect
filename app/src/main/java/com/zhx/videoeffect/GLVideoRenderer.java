@@ -69,9 +69,9 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
     public GLVideoRenderer(Context context,String videoPath) {
         this.context = context;
         playerPrepared=false;
-        synchronized(this) {
-            updateSurface = false;
-        }
+        synchronized(this) { updateSurface = false; }
+
+        //buffer
         vertexBuffer = ByteBuffer.allocateDirect(vertexData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
@@ -100,7 +100,7 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         //set shader
         String vertexShader = ShaderUtils.readRawTextFile(context, R.raw.simple_vertex_shader);
-        String fragmentShader= ShaderUtils.readRawTextFile(context, R.raw.gray_fragment_shader);
+        String fragmentShader= ShaderUtils.readRawTextFile(context, R.raw.simple_fragment_shader);
         programID = ShaderUtils.createProgram(vertexShader,fragmentShader);
         aPositionLocation = GLES20.glGetAttribLocation(programID,"aPosition");
         aTextureCoordLocation = GLES20.glGetAttribLocation(programID,"aTexCoord");
@@ -148,10 +148,10 @@ public class GLVideoRenderer implements GLSurfaceView.Renderer
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear( GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
-        synchronized (this){
-            if (updateSurface){
+        synchronized (this) {
+            if (updateSurface) {
                 surfaceTexture.updateTexImage();//获取新数据
-                surfaceTexture.getTransformMatrix(mTexMatrix);//让新的纹理和纹理坐标系能够正确的对应,mSTMatrix的定义是和projectionMatrix完全一样的。
+                surfaceTexture.getTransformMatrix(mTexMatrix);//让新的纹理和纹理坐标系能够正确的对应
                 updateSurface = false;
             }
         }
